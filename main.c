@@ -50,13 +50,16 @@ int main(void)
 
     /* Infinite loop. */
     while (1) {
+    	/*
     	for(int i = 0; i < 8; i++)
     	{
 			int prox_dist = get_calibrated_prox(i);
 			if(prox_dist > 600)
 				chprintf((BaseSequentialStream *)&SD3, "STOP by S%d\n", i);
     	}
-
+    	*/
+    	uint16_t prox_dist = get_calibrated_prox(0);
+		chprintf((BaseSequentialStream *)&SD3, "S0 = %d\n", prox_dist);
     	//waits 1 second
         chThdSleepMilliseconds(1000);
     }
