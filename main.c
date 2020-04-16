@@ -9,6 +9,7 @@
 #include <usbcfg.h>
 #include <main.h>
 #include <chprintf.h>
+#include <motors.h>
 #include <sensors/proximity.h>
 #include <audio/microphone.h>
 
@@ -76,9 +77,11 @@ int main(void)
     //starts timer 12
     timer12_start();
     serial_start();
+    //inits the motors
+    motors_init();
 
     messagebus_init(&bus, &bus_lock, &bus_condvar);
-
+    //chprintf((BaseSequentialStream *)&SD3, "hello");
 #ifdef USE_PROX_SENSOR //initialise senseur de proximité
     proximity_start();
     calibrate_ir();
@@ -96,6 +99,7 @@ int main(void)
 
     /* Infinite loop. */
     while (1) {
+
     	/****PROX_SENSOR****/
 #ifdef USE_PROX_SENSOR
     	for(int i = 0; i < 8; i++)
@@ -144,6 +148,8 @@ int main(void)
 
         }
 #endif  /* SEND_FROM_MIC */
+
+
     	//waits 1 second
         chThdSleepMilliseconds(1000);
     }

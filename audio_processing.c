@@ -1,7 +1,6 @@
 #include "ch.h"
 #include "hal.h"
 #include <main.h>
-#include <chprintf.h>
 #include <usbcfg.h>
 #include <chprintf.h>
 
@@ -47,6 +46,7 @@ static float micBack_output[FFT_SIZE];
 #define FREQ_STOP_L 	(FREQ_STOP-1)
 #define FREQ_STOP_H 	(FREQ_STOP+1)
 
+int state_frequence = 4;
 /*
 * Simple function used to detect the highest value in a buffer
 * and to execute a motor command depending on it
@@ -63,28 +63,53 @@ void sound_remote(float* data){
 		}
 	}
 
-	//go forward
+	//go forward et state_frequence = 0
 	if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
-		chprintf((BaseSequentialStream *)&SD3, "Forward\n");
+		//chprintf((BaseSequentialStream *)&SD3, "Forward\n");
+		state_frequence = 0;
 	}
-	//turn left
+	//turn left et state_frequence = 1
 	else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
-		chprintf((BaseSequentialStream *)&SD3, "Left\n");
+		//chprintf((BaseSequentialStream *)&SD3, "Left\n");
+		state_frequence = 1;
 	}
-	//turn right
+	//turn right et state_frequence = 2
 	else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
-		chprintf((BaseSequentialStream *)&SD3, "Right\n");
+		//chprintf((BaseSequentialStream *)&SD3, "Right\n");
+		state_frequence = 2;
 	}
-	//go backward
+	//go backward et state_frequence = 3
 	else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
-		chprintf((BaseSequentialStream *)&SD3, "Backward\n");
+		//chprintf((BaseSequentialStream *)&SD3, "Backward\n");
+		state_frequence = 3;
 	}
-	//stop
+	//stop et state_frequence = 4
 	else if(max_norm_index >= FREQ_STOP_L  && max_norm_index <= FREQ_STOP_H){
-		chprintf((BaseSequentialStream *)&SD3, "Stop\n");
+		//chprintf((BaseSequentialStream *)&SD3, "Stop\n");
+		state_frequence = 4;
 	}
-	else{
-		chprintf((BaseSequentialStream *)&SD3, "Rien\n");
+
+	switch(state_frequence){
+		case 0:
+			left_motor_set_speed(600);
+			right_motor_set_speed(600);
+			break;
+		case 1:
+			left_motor_set_speed(-600);
+			right_motor_set_speed(600);
+			break;
+		case 2:
+			left_motor_set_speed(600);
+			right_motor_set_speed(-600);
+			break;
+		case 3:
+			left_motor_set_speed(-600);
+			right_motor_set_speed(-600);
+			break;
+		case 4:
+			left_motor_set_speed(0);
+			right_motor_set_speed(0);
+			break;
 	}
 }
 /*
@@ -112,10 +137,10 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	//loop to fill the buffers
 	for(uint16_t i = 0 ; i < num_samples ; i+=4){
 	//construct an array of complex numbers. Put 0 to the imaginary part
-		micRight_cmplx_input[nb_samples] = (float)data[i + MIC_RIGHT];
+		micRight_cmplx_input[nb_samples] = 0;
 		micLeft_cmplx_input[nb_samples] = (float)data[i + MIC_LEFT];
-		micBack_cmplx_input[nb_samples] = (float)data[i + MIC_BACK];
-		micFront_cmplx_input[nb_samples] = (float)data[i + MIC_FRONT];
+		micBack_cmplx_input[nb_samples] = 0;
+		micFront_cmplx_input[nb_samples] = 0;
 
 		nb_samples++;
 		//met les complexs = 0
@@ -138,10 +163,10 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	* This FFT function stores the results in the input buffer given.
 	* This is an "In Place" function.
 	*/
-		doFFT_optimized(FFT_SIZE, micRight_cmplx_input);
+		//doFFT_optimized(FFT_SIZE, micRight_cmplx_input);
 		doFFT_optimized(FFT_SIZE, micLeft_cmplx_input);
-		doFFT_optimized(FFT_SIZE, micFront_cmplx_input);
-		doFFT_optimized(FFT_SIZE, micBack_cmplx_input);
+		//doFFT_optimized(FFT_SIZE, micFront_cmplx_input);
+		//doFFT_optimized(FFT_SIZE, micBack_cmplx_input);
 	/* Magnitude processing
 	*
 	* Computes the magnitude of the complex numbers and
@@ -149,10 +174,10 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	* real numbers.
 	*
 	*/
-		arm_cmplx_mag_f32(micRight_cmplx_input, micRight_output, FFT_SIZE);
+		//arm_cmplx_mag_f32(micRight_cmplx_input, micRight_output, FFT_SIZE);
 		arm_cmplx_mag_f32(micLeft_cmplx_input, micLeft_output, FFT_SIZE);
-		arm_cmplx_mag_f32(micFront_cmplx_input, micFront_output, FFT_SIZE);
-		arm_cmplx_mag_f32(micBack_cmplx_input, micBack_output, FFT_SIZE);
+		//arm_cmplx_mag_f32(micFront_cmplx_input, micFront_output, FFT_SIZE);
+		//arm_cmplx_mag_f32(micBack_cmplx_input, micBack_output, FFT_SIZE);
 	//sends only one FFT result over 10 for 1 mic to not flood the computer
 	//sends to UART3
 		if(mustSend > 8){
