@@ -71,6 +71,8 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
+    //starts the USB communication
+    usb_start();
     //starts timer 12
     timer12_start();
     serial_start();
@@ -110,6 +112,10 @@ int main(void)
 
 
     	/****MICRO****/
+#ifdef SEND_FROM_MIC
+        //waits until a result must be sent to the computer
+        wait_send_to_computer();
+
 #ifdef DOUBLE_BUFFERING
         //we copy the buffer to avoid conflicts
         arm_copy_f32(get_audio_buffer_ptr(LEFT_OUTPUT), send_tab, FFT_SIZE);
@@ -118,9 +124,6 @@ int main(void)
         SendFloatToComputer((BaseSequentialStream *) &SD3, get_audio_buffer_ptr(LEFT_OUTPUT), FFT_SIZE);
 #endif  /* DOUBLE_BUFFERING */
 
-#ifdef SEND_FROM_MIC
-        //waits until a result must be sent to the computer
-        wait_send_to_computer();
 #else
 
         float* bufferCmplxInput = get_audio_buffer_ptr(LEFT_CMPLX_INPUT);

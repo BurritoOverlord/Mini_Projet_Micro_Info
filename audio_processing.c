@@ -1,6 +1,7 @@
 #include "ch.h"
 #include "hal.h"
 #include <main.h>
+#include <chprintf.h>
 #include <usbcfg.h>
 #include <chprintf.h>
 
@@ -27,21 +28,24 @@ static float micBack_output[FFT_SIZE];
 
 #define MIN_VALUE_THRESHOLD 10000
 
-#define MIN_FREQ 10 //we don’t analyze before this index to not use resources for nothing
-#define FREQ_FORWARD 16 //250Hz
-#define FREQ_LEFT 19 //296Hz
-#define FREQ_RIGHT 23 //359HZ
-#define FREQ_BACKWARD 26 //406Hz
-#define MAX_FREQ 30 //we don’t analyze after this index to not use resources for nothing
+#define MIN_FREQ 		18 //we don’t analyze before this index to not use resources for nothing
+#define FREQ_FORWARD 	19 //296Hz = 19 * 15.625
+#define FREQ_LEFT 		22 //343Hz = 22 * 15.625
+#define FREQ_RIGHT 		26 //406HZ = 26 * 15.625
+#define FREQ_BACKWARD 	29 //453Hz = 29 * 15.625
+#define FREQ_STOP 		32 //500Hz = 32 * 15.625
+#define MAX_FREQ 		33 //we don’t analyze after this index to not use resources for nothing
 
-#define FREQ_FORWARD_L (FREQ_FORWARD-1)
-#define FREQ_FORWARD_H (FREQ_FORWARD+1)
-#define FREQ_LEFT_L (FREQ_LEFT-1)
-#define FREQ_LEFT_H (FREQ_LEFT+1)
-#define FREQ_RIGHT_L (FREQ_RIGHT-1)
-#define FREQ_RIGHT_H (FREQ_RIGHT+1)
+#define FREQ_FORWARD_L 	(FREQ_FORWARD-1)
+#define FREQ_FORWARD_H 	(FREQ_FORWARD+1)
+#define FREQ_LEFT_L 	(FREQ_LEFT-1)
+#define FREQ_LEFT_H 	(FREQ_LEFT+1)
+#define FREQ_RIGHT_L 	(FREQ_RIGHT-1)
+#define FREQ_RIGHT_H 	(FREQ_RIGHT+1)
 #define FREQ_BACKWARD_L (FREQ_BACKWARD-1)
 #define FREQ_BACKWARD_H (FREQ_BACKWARD+1)
+#define FREQ_STOP_L 	(FREQ_STOP-1)
+#define FREQ_STOP_H 	(FREQ_STOP+1)
 
 /*
 * Simple function used to detect the highest value in a buffer
@@ -61,27 +65,26 @@ void sound_remote(float* data){
 
 	//go forward
 	if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
-		left_motor_set_speed(600);
-		right_motor_set_speed(600);
+		chprintf((BaseSequentialStream *)&SD3, "Forward\n");
 	}
 	//turn left
 	else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
-		left_motor_set_speed(-600);
-		right_motor_set_speed(600);
+		chprintf((BaseSequentialStream *)&SD3, "Left\n");
 	}
 	//turn right
 	else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
-		left_motor_set_speed(600);
-		right_motor_set_speed(-600);
+		chprintf((BaseSequentialStream *)&SD3, "Right\n");
 	}
 	//go backward
 	else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
-		left_motor_set_speed(-600);
-		right_motor_set_speed(-600);
+		chprintf((BaseSequentialStream *)&SD3, "Backward\n");
+	}
+	//stop
+	else if(max_norm_index >= FREQ_STOP_L  && max_norm_index <= FREQ_STOP_H){
+		chprintf((BaseSequentialStream *)&SD3, "Stop\n");
 	}
 	else{
-		left_motor_set_speed(0);
-		right_motor_set_speed(0);
+		chprintf((BaseSequentialStream *)&SD3, "Rien\n");
 	}
 }
 /*
