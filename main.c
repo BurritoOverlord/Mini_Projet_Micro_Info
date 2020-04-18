@@ -24,12 +24,10 @@ MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
 //uncomment to use proximity sensor
-//#define USE_PROX_SENSOR
+#define USE_PROX_SENSOR
 
 //uncomment to send the FFTs results from the real microphones
 #define SEND_FROM_MIC
-//uncomment to use double buffering to send the FFT to the computer
-#define DOUBLE_BUFFERING
 
 void SendUint8ToComputer(uint8_t* data, uint16_t size)
 {
@@ -81,15 +79,11 @@ int main(void)
     motors_init();
 
     messagebus_init(&bus, &bus_lock, &bus_condvar);
-    //chprintf((BaseSequentialStream *)&SD3, "hello");
+
 #ifdef USE_PROX_SENSOR //initialise senseur de proximité
     proximity_start();
     calibrate_ir();
 #endif /* USE_PROX_SENSOR */
-
-    //send_tab is used to save the state of the buffer to send (double buffering)
-    //to avoid modifications of the buffer while sending it
-    static float send_tab[FFT_SIZE];
 
 #ifdef SEND_FROM_MIC
     //starts the microphones processing thread.
@@ -113,42 +107,6 @@ int main(void)
 		chprintf((BaseSequentialStream *)&SD3, "S0 = %d\n", prox_dist);
 		*/
 #endif /* USE_PROX_SENSOR */
-
-
-    	/****MICRO****/
-#ifdef SEND_FROM_MIC
-        //waits until a result must be sent to the computer
-        wait_send_to_computer();
-
-#ifdef DOUBLE_BUFFERING
-        //we copy the buffer to avoid conflicts
-        arm_copy_f32(get_audio_buffer_ptr(LEFT_OUTPUT), send_tab, FFT_SIZE);
-        SendFloatToComputer((BaseSequentialStream *) &SD3, send_tab, FFT_SIZE);
-#else
-        SendFloatToComputer((BaseSequentialStream *) &SD3, get_audio_buffer_ptr(LEFT_OUTPUT), FFT_SIZE);
-#endif  /* DOUBLE_BUFFERING */
-
-#else
-
-        float* bufferCmplxInput = get_audio_buffer_ptr(LEFT_CMPLX_INPUT);
-        float* bufferOutput = get_audio_buffer_ptr(LEFT_OUTPUT);
-
-        //attend de recevoir des données du scripte pyton
-        uint16_t size = ReceiveInt16FromComputer((BaseSequentialStream *) &SD3, bufferCmplxInput, FFT_SIZE);
-
-        if(size == FFT_SIZE){
-
-        	volatile uint16_t time = 0;
-
-            doFFT_optimized(FFT_SIZE, bufferCmplxInput);
-
-            arm_cmplx_mag_f32(bufferCmplxInput, bufferOutput, FFT_SIZE);
-
-            SendFloatToComputer((BaseSequentialStream *) &SD3, bufferOutput, FFT_SIZE);
-
-        }
-#endif  /* SEND_FROM_MIC */
-
 
     	//waits 1 second
         chThdSleepMilliseconds(1000);

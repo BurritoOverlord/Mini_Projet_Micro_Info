@@ -10,6 +10,7 @@
 #include <communications.h>
 #include <fft.h>
 #include <arm_math.h>
+#include <moteur_manager.h>
 
 //semaphore
 static BSEMAPHORE_DECL(sendToComputer_sem, TRUE);
@@ -21,9 +22,9 @@ static float micFront_cmplx_input[2 * FFT_SIZE];
 static float micBack_cmplx_input[2 * FFT_SIZE];
 //Arrays containing the computed magnitude of the complex numbers
 static float micLeft_output[FFT_SIZE];
-static float micRight_output[FFT_SIZE];
-static float micFront_output[FFT_SIZE];
-static float micBack_output[FFT_SIZE];
+//static float micRight_output[FFT_SIZE];
+//static float micFront_output[FFT_SIZE];
+//static float micBack_output[FFT_SIZE];
 
 #define MIN_VALUE_THRESHOLD 10000
 
@@ -46,7 +47,15 @@ static float micBack_output[FFT_SIZE];
 #define FREQ_STOP_L 	(FREQ_STOP-1)
 #define FREQ_STOP_H 	(FREQ_STOP+1)
 
-int state_frequence = 4;
+/*state_frequence
+ * 0 = forward
+ * 1 = left
+ * 2 = right
+ * 3 = backward
+ * 4 = stop
+ * 5 = aucune directive
+ */
+static uint8_t state_frequence = 4;
 /*
 * Simple function used to detect the highest value in a buffer
 * and to execute a motor command depending on it
@@ -65,53 +74,32 @@ void sound_remote(float* data){
 
 	//go forward et state_frequence = 0
 	if(max_norm_index >= FREQ_FORWARD_L && max_norm_index <= FREQ_FORWARD_H){
-		//chprintf((BaseSequentialStream *)&SD3, "Forward\n");
 		state_frequence = 0;
 	}
 	//turn left et state_frequence = 1
 	else if(max_norm_index >= FREQ_LEFT_L && max_norm_index <= FREQ_LEFT_H){
-		//chprintf((BaseSequentialStream *)&SD3, "Left\n");
 		state_frequence = 1;
 	}
 	//turn right et state_frequence = 2
 	else if(max_norm_index >= FREQ_RIGHT_L && max_norm_index <= FREQ_RIGHT_H){
-		//chprintf((BaseSequentialStream *)&SD3, "Right\n");
 		state_frequence = 2;
 	}
 	//go backward et state_frequence = 3
 	else if(max_norm_index >= FREQ_BACKWARD_L && max_norm_index <= FREQ_BACKWARD_H){
-		//chprintf((BaseSequentialStream *)&SD3, "Backward\n");
 		state_frequence = 3;
 	}
 	//stop et state_frequence = 4
 	else if(max_norm_index >= FREQ_STOP_L  && max_norm_index <= FREQ_STOP_H){
-		//chprintf((BaseSequentialStream *)&SD3, "Stop\n");
 		state_frequence = 4;
 	}
-
-	switch(state_frequence){
-		case 0:
-			left_motor_set_speed(600);
-			right_motor_set_speed(600);
-			break;
-		case 1:
-			left_motor_set_speed(-600);
-			right_motor_set_speed(600);
-			break;
-		case 2:
-			left_motor_set_speed(600);
-			right_motor_set_speed(-600);
-			break;
-		case 3:
-			left_motor_set_speed(-600);
-			right_motor_set_speed(-600);
-			break;
-		case 4:
-			left_motor_set_speed(0);
-			right_motor_set_speed(0);
-			break;
+	//aucune directive
+	else{
+		state_frequence = 5;
 	}
+
+	moteur_manager_deplacement(state_frequence);
 }
+
 /*
 *	Callback called when the demodulation of the four microphones is done.
 *	We get 160 samples per mic every 10ms (16kHz)
@@ -191,37 +179,8 @@ void processAudioData(int16_t *data, uint16_t num_samples){
 	}
 }
 
-
-void wait_send_to_computer(void){
-	chBSemWait(&sendToComputer_sem);
-}
-
-float* get_audio_buffer_ptr(BUFFER_NAME_t name){
-	if(name == LEFT_CMPLX_INPUT){
-		return micLeft_cmplx_input;
-	}
-	else if (name == RIGHT_CMPLX_INPUT){
-		return micRight_cmplx_input;
-	}
-	else if (name == FRONT_CMPLX_INPUT){
-		return micFront_cmplx_input;
-	}
-	else if (name == BACK_CMPLX_INPUT){
-		return micBack_cmplx_input;
-	}
-	else if (name == LEFT_OUTPUT){
-		return micLeft_output;
-	}
-	else if (name == RIGHT_OUTPUT){
-		return micRight_output;
-	}
-	else if (name == FRONT_OUTPUT){
-		return micFront_output;
-	}
-	else if (name == BACK_OUTPUT){
-		return micBack_output;
-	}
-	else{
-		return NULL;
-	}
+//renvoie le numéro correspondant à la fréquence
+uint8_t get_state_frequence(void)
+{
+	return state_frequence;
 }
