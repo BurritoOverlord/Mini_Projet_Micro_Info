@@ -26,7 +26,7 @@ static float micLeft_output[FFT_SIZE];
 //static float micFront_output[FFT_SIZE];
 //static float micBack_output[FFT_SIZE];
 
-#define MIN_VALUE_THRESHOLD 10000
+#define MIN_VALUE_THRESHOLD 20000 //10000 initialy
 
 #define MIN_FREQ 		18 //we don’t analyze before this index to not use resources for nothing
 #define FREQ_FORWARD 	19 //296Hz = 19 * 15.625

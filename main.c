@@ -23,9 +23,6 @@ messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
-//uncomment to use proximity sensor
-#define USE_PROX_SENSOR
-
 //uncomment to send the FFTs results from the real microphones
 #define SEND_FROM_MIC
 
@@ -70,20 +67,16 @@ int main(void)
     halInit();
     chSysInit();
     mpu_init();
-    //starts the USB communication
     usb_start();
-    //starts timer 12
     timer12_start();
     serial_start();
-    //inits the motors
     motors_init();
+    spi_comm_start();
 
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
-#ifdef USE_PROX_SENSOR //initialise senseur de proximité
     proximity_start();
     calibrate_ir();
-#endif /* USE_PROX_SENSOR */
 
 #ifdef SEND_FROM_MIC
     //starts the microphones processing thread.
@@ -93,21 +86,7 @@ int main(void)
 
     /* Infinite loop. */
     while (1) {
-
-    	/****PROX_SENSOR****/
-#ifdef USE_PROX_SENSOR
-    	for(int i = 0; i < 8; i++)
-    	{
-    		int16_t prox_dist = get_calibrated_prox(i);
-			if(prox_dist > 600)
-				chprintf((BaseSequentialStream *)&SD3, "STOP by S%d\n", i);
-    	}
-    	/*
-    	uint16_t prox_dist = get_calibrated_prox(0);
-		chprintf((BaseSequentialStream *)&SD3, "S0 = %d\n", prox_dist);
-		*/
-#endif /* USE_PROX_SENSOR */
-
+		//chprintf((BaseSequentialStream *)&SD3, "STOP by S%d\n", i);
     	//waits 1 second
         chThdSleepMilliseconds(1000);
     }
