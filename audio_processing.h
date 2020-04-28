@@ -10,6 +10,4 @@
 
 void processAudioData(int16_t *data, uint16_t num_samples);
 
-uint8_t get_state_frequence(void);
-
 #endif /* AUDIO_PROCESSING_H */

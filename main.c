@@ -12,6 +12,9 @@
 #include <motors.h>
 #include <sensors/proximity.h>
 #include <audio/microphone.h>
+#include <audio/play_melody.h>
+#include "audio/audio_thread.h"
+#include <spi_comm.h>
 
 #include <audio_processing.h>
 #include <fft.h>
@@ -72,6 +75,8 @@ int main(void)
     serial_start();
     motors_init();
     spi_comm_start();
+	playMelodyStart();
+	dac_start();
 
     messagebus_init(&bus, &bus_lock, &bus_condvar);
 
