@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdbool.h>
 #include <math.h>
-#include <arm_math.h>
 
 #include <main.h>
 #include <usbcfg.h>
@@ -13,6 +12,7 @@
 #include <audio_processing.h>
 #include <sensors/proximity.h>
 #include <moteur_manager.h>
+#include <animation_manager.h>
 #include <button.h>
 #include <spi_comm.h>
 #include <leds.h>
@@ -22,7 +22,6 @@
 #define HARDCORE_SPEED	MOTOR_SPEED_LIMIT
 #define VETERAN_SPEED	800
 #define NORMAL_SPEED	500
-
 
 void moteur_manager_deplacement(uint8_t state_frequence)
 {
@@ -42,6 +41,7 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 			recording = false;
 			play_record = true;
 			end_record = false;
+			stopCurrentMelody();
 		}
 		else
 		{
@@ -49,7 +49,7 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 		}
 	}
 
-	speed = toggle_speed(state_frequence, speed);
+	speed = toggle_speed(state_frequence, recording, play_record, speed);
 
 	/*****Contrainte Mouvement*****/
 	//mémorise avancer/reculer/stop
@@ -82,7 +82,6 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 	if(recording && coll_detected){
 		end_record = true;
 		gameover = true;
-		//game_over_animation(true);
 	}
 
 	//RECORD
@@ -90,10 +89,13 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 		if(rec_num < MAX_REC_TIME){
 			rec_data[rec_num] = state_frequence;
 			rec_num++;
+			if(rec_num == 714)//environ 10s avant fin record => son bombe
+				play_external_melody();
 		}
 		else{
 			end_record = true;
 			gameover = true;
+			stopCurrentMelody();
 		}
 	}
 
@@ -110,6 +112,7 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 			gameover = false;
 			rec_num = 0;
 			state_frequence = 4;
+			stopCurrentMelody();
 		}
 	}
 	/*****Record et Play Record*****/
@@ -121,7 +124,7 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 
 
 	/*****Animation*****/
-	animation_manager(recording, play_record, coll_detected, gameover, sens_num);
+	animation(recording, play_record, coll_detected, gameover, sens_num);
 	/*****Animation*****/
 }
 
@@ -151,10 +154,10 @@ void robot_mvt(uint8_t state_frequence, int speed)
 	}
 }
 
-int toggle_speed(uint8_t state_frequence, int speed)
+int toggle_speed(uint8_t state_frequence, bool recording, bool play_record, int speed)
 {
 	static uint8_t last_freq_state = 4;
-	if(state_frequence == 5 && last_freq_state != 5)
+	if(state_frequence == 5 && last_freq_state != 5 && !recording && !play_record)
 	{
 		last_freq_state = state_frequence;
 		switch(speed){
@@ -207,40 +210,5 @@ uint8_t reverse_state_frequence(uint8_t state_frequence)
 			break;
 	}
 	return 4;
-
-}
-
-void animation_manager(bool recording, bool play_record, bool coll_detected, bool gameover, bool sens_num[])
-{
-	if(!recording && !play_record && coll_detected){//if collision
-		on_off_all_LED(sens_num[0],sens_num[1],sens_num[2],sens_num[3],sens_num[4],sens_num[5],sens_num[6],sens_num[7],0,0);
-	}
-	else if(recording && !play_record){//recording
-		on_off_all_LED(0,0,0,0,0,0,0,0,1,1);
-	}
-	else if(!recording && play_record && gameover){//Gameover
-		on_off_all_LED(1,1,1,1,1,1,1,1,0,0);
-		playMelody(MARIO_DEATH, ML_SIMPLE_PLAY, NULL);
-	}
-	else if(!recording && play_record && !gameover){//if Victory
-		on_off_all_LED(1,1,1,1,1,1,1,1,1,1);
-		playMelody(MARIO_FLAG, ML_SIMPLE_PLAY, NULL);
-	}
-	else//if nothing
-		on_off_all_LED(0,0,0,0,0,0,0,0,0,0);
-}
-
-void on_off_all_LED(bool led1, bool led2, bool led3, bool led4, bool led5, bool led6, bool led7, bool led8, bool body_led, bool front_led)
-{
-	set_led(LED1, led1);
-	set_rgb_led(LED2, led2 * 100, 0, 0);
-	set_led(LED3, led3);
-	set_rgb_led(LED4, led4 * 100, 0, 0);
-	set_led(LED5, led5);
-	set_rgb_led(LED6, led6 * 100, 0, 0);
-	set_led(LED7, led7);
-	set_rgb_led(LED8, led8 * 100, 0, 0);
-	set_body_led(body_led);
-	set_front_led(front_led);
 
 }

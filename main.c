@@ -18,7 +18,6 @@
 
 #include <audio_processing.h>
 #include <fft.h>
-#include <communications.h>
 #include <arm_math.h>
 
 //référence aux BUS
