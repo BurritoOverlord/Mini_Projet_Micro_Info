@@ -35,16 +35,13 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 	static bool gameover = false;
 
 	//Start game and start recording
-	if(toggle_record() || end_record)
-	{
-		if(recording){
+	if(toggle_record() || end_record){
+		if (recording) {
 			recording = false;
 			play_record = true;
 			end_record = false;
 			stopCurrentMelody();
-		}
-		else
-		{
+		} else {
 			recording = true;
 		}
 	}
@@ -53,25 +50,23 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 
 	/*****Contrainte Mouvement*****/
 	//mémorise avancer/reculer/stop
-	if(state_frequence == 0 || state_frequence == 3 || state_frequence == 4)
+	if (state_frequence == 0 || state_frequence == 3 || state_frequence == 4)
 		last_direction = state_frequence;
 
 	//continue la mouvement précédant(avancer/reculer/stop) après une rotation ou si changement de difficulté
-	if(state_frequence == 6 || state_frequence == 5)
+	if (state_frequence == 6 || state_frequence == 5)
 		state_frequence = last_direction;
 	/*****Contrainte Mouvement*****/
-
 
 	/******Collision detection*****/
 	bool sens_num[8];
 	bool coll_detected = false;
 
-	for(int i = 0; i < 8; i++){
-		if(get_calibrated_prox(i) > 600){
+	for (int i = 0; i < 8; i++) {
+		if (get_calibrated_prox(i) > 600) {
 			sens_num[i] = true;
 			coll_detected = true;
-		}
-		else
+		} else
 			sens_num[i] = false;
 	}
 	/******Collision detection*****/
@@ -79,20 +74,19 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 
 	/*****Record et Play Record*****/
 	//GAMEOVER
-	if(recording && coll_detected){
+	if (recording && coll_detected) {
 		end_record = true;
 		gameover = true;
 	}
 
 	//RECORD
-	if(recording){
-		if(rec_num < MAX_REC_TIME){
+	if (recording) {
+		if (rec_num < MAX_REC_TIME) {
 			rec_data[rec_num] = state_frequence;
 			rec_num++;
-			if(rec_num == 714)//environ 10s avant fin record => son bombe
+			if (rec_num == 714) //environ 10s avant fin record => son bombe
 				play_external_melody();
-		}
-		else{
+		} else {
 			end_record = true;
 			gameover = true;
 			stopCurrentMelody();
@@ -100,76 +94,69 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 	}
 
 	//PLAY_RECORD
-	if(play_record){
-		if(rec_num != 0)
-		{
+	if (play_record) {
+		if (rec_num != 0) {
 			rec_num--;
 			state_frequence = reverse_state_frequence(rec_data[rec_num]);
-		}
-		else
-		{
+		} else {
 			play_record = false;
 			gameover = false;
 			rec_num = 0;
-			state_frequence = 4;
+			state_frequence = last_direction = 4;
 			stopCurrentMelody();
 		}
 	}
 	/*****Record et Play Record*****/
 
-
 	/*****Mouvement*****/
 	robot_mvt(state_frequence, speed);
 	/*****Mouvement*****/
-
 
 	/*****Animation*****/
 	animation(recording, play_record, coll_detected, gameover, sens_num);
 	/*****Animation*****/
 }
 
-void robot_mvt(uint8_t state_frequence, int speed)
-{
-	switch(state_frequence){
-		case 0://forward
-			left_motor_set_speed(speed);
-			right_motor_set_speed(speed);
-			break;
-		case 1://left
-			left_motor_set_speed(-speed/2);
-			right_motor_set_speed(speed/2);
-			break;
-		case 2://right
-			left_motor_set_speed(speed/2);
-			right_motor_set_speed(-speed/2);
-			break;
-		case 3://backward
-			left_motor_set_speed(-speed);
-			right_motor_set_speed(-speed);
-			break;
-		case 4://stop
-			left_motor_set_speed(0);
-			right_motor_set_speed(0);
-			break;
+void robot_mvt(uint8_t state_frequence, int speed) {
+	switch (state_frequence) {
+	case 0: //forward
+		left_motor_set_speed(speed);
+		right_motor_set_speed(speed);
+		break;
+	case 1: //left
+		left_motor_set_speed(-speed / 2);
+		right_motor_set_speed(speed / 2);
+		break;
+	case 2: //right
+		left_motor_set_speed(speed / 2);
+		right_motor_set_speed(-speed / 2);
+		break;
+	case 3: //backward
+		left_motor_set_speed(-speed);
+		right_motor_set_speed(-speed);
+		break;
+	case 4: //stop
+		left_motor_set_speed(0);
+		right_motor_set_speed(0);
+		break;
 	}
 }
 
-int toggle_speed(uint8_t state_frequence, bool recording, bool play_record, int speed)
-{
+int toggle_speed(uint8_t state_frequence, bool recording, bool play_record, int speed) {
 	static uint8_t last_freq_state = 4;
-	if(state_frequence == 5 && last_freq_state != 5 && !recording && !play_record)
-	{
+	if (state_frequence == 5 && last_freq_state != 5 && !recording && !play_record) {
 		last_freq_state = state_frequence;
-		switch(speed){
-			case NORMAL_SPEED:
-				return VETERAN_SPEED;
-				break;
-			case VETERAN_SPEED:
-				return HARDCORE_SPEED;
-				break;
-			case HARDCORE_SPEED:
-				return NORMAL_SPEED;
-				break;
+
+		switch (speed) {
+		case NORMAL_SPEED:
+			return VETERAN_SPEED;
+			break;
+		case VETERAN_SPEED:
+			return HARDCORE_SPEED;
+			break;
+		case HARDCORE_SPEED:
+			return NORMAL_SPEED;
+			break;
 		}
 	}
 
@@ -177,11 +164,10 @@ int toggle_speed(uint8_t state_frequence, bool recording, bool play_record, int 
 	return speed;
 }
 
-bool toggle_record(void)
-{
+bool toggle_record(void) {
 	static bool last_button_state = false;
-	if(!button_get_state() && last_button_state)
-	{
+
+	if (!button_get_state() && last_button_state) {
 		last_button_state = button_get_state();
 		return true;
 	}
@@ -190,25 +176,23 @@ bool toggle_record(void)
 	return false;
 }
 
-uint8_t reverse_state_frequence(uint8_t state_frequence)
-{
-	switch(state_frequence){
-		case 0:
-			return 3;
-			break;
-		case 1:
-			return 2;
-			break;
-		case 2:
-			return 1;
-			break;
-		case 3:
-			return 0;
-			break;
-		case 4:
-			return 4;
-			break;
+uint8_t reverse_state_frequence(uint8_t state_frequence) {
+	switch (state_frequence) {
+	case 0:
+		return 3;
+		break;
+	case 1:
+		return 2;
+		break;
+	case 2:
+		return 1;
+		break;
+	case 3:
+		return 0;
+		break;
+	case 4:
+		return 4;
+		break;
 	}
 	return 4;
-
 }

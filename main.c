@@ -13,7 +13,7 @@
 #include <sensors/proximity.h>
 #include <audio/microphone.h>
 #include <audio/play_melody.h>
-#include "audio/audio_thread.h"
+#include <audio/audio_thread.h>
 #include <spi_comm.h>
 
 #include <audio_processing.h>
@@ -25,18 +25,13 @@ messagebus_t bus;
 MUTEX_DECL(bus_lock);
 CONDVAR_DECL(bus_condvar);
 
-//uncomment to send the FFTs results from the real microphones
-#define SEND_FROM_MIC
-
-void SendUint8ToComputer(uint8_t* data, uint16_t size)
-{
+void SendUint8ToComputer(uint8_t* data, uint16_t size){
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)"START", 5);
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)&size, sizeof(uint16_t));
 	chSequentialStreamWrite((BaseSequentialStream *)&SD3, (uint8_t*)data, size);
 }
 
-static void serial_start(void)
-{
+static void serial_start(void){
 	static SerialConfig ser_cfg = {
 	    115200,
 	    0,
@@ -63,9 +58,7 @@ static void timer12_start(void){
     gptStartContinuous(&GPTD12, 0xFFFF);
 }
 
-int main(void)
-{
-
+int main(void){
     halInit();
     chSysInit();
     mpu_init();
@@ -82,15 +75,11 @@ int main(void)
     proximity_start();
     calibrate_ir();
 
-#ifdef SEND_FROM_MIC
     //starts the microphones processing thread.
     //it calls the callback given in parameter when samples are ready
     mic_start(&processAudioData);
-#endif  /* SEND_FROM_MIC */
 
-    /* Infinite loop. */
-    while (1) {
-		//chprintf((BaseSequentialStream *)&SD3, "STOP by S%d\n", i);
+    while (1){
     	//waits 1 second
         chThdSleepMilliseconds(1000);
     }
