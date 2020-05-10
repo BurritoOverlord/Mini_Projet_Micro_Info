@@ -40,7 +40,7 @@ static const float bomb_tempo[] ={
 	20,20,
 	1
 };
-
+//melody de la bombe
 static const melody_t melody[1] = {
 		  //EXTERNAL_SONG
 		  {
@@ -50,21 +50,20 @@ static const melody_t melody[1] = {
 		  },
 };
 
-static const bool rec_tab[160] = { REC_LED_ANIMATION };
+static const bool rec_tab[160] = { REC_LED_ANIMATION };		//tableau pour l'animation des LEDs pour RECORDING
 
-static const bool g_o_tab[100] = { GAMEOVER_LED_ANIMATION };
+static const bool g_o_tab[100] = { GAMEOVER_LED_ANIMATION };//tableau pour l'animation des LEDs pour GAMEOVER
 
-static const bool win_tab[320] = { WIN_LED_ANIMATION };
+static const bool win_tab[320] = { WIN_LED_ANIMATION };		//tableau pour l'animation des LEDs pour WIN
 
-void animation(bool recording, bool play_record, bool coll_detected,
-		bool gameover, bool sens_num[]) {
+void animation(bool recording, bool play_record, bool coll_detected, bool gameover, bool sens_num[]) {
 	static uint8_t memo_i_record = 0;
 	static uint8_t memo_i_gameover = 0;
 	static uint32_t memo_i_win = 0;
 
-	if (!recording && !play_record && coll_detected) { //if collision
+	if (!recording && !play_record && coll_detected) { 	//COLLSION
 		on_off_all_LED(sens_num[0], sens_num[1], sens_num[2], sens_num[3], sens_num[4], sens_num[5], sens_num[6], sens_num[7], 0, 0);
-	} else if (recording && !play_record) { //recording
+	} else if (recording && !play_record) { 			//RECORDING
 		uint8_t i = memo_i_gameover;
 		on_off_all_LED(rec_tab[i], rec_tab[i + 1], rec_tab[i + 2],
 				rec_tab[i + 3], rec_tab[i + 4], rec_tab[i + 5], rec_tab[i + 6],
@@ -72,7 +71,7 @@ void animation(bool recording, bool play_record, bool coll_detected,
 		memo_i_gameover += 10;
 		if (memo_i_gameover == 160)
 			memo_i_gameover = 0;
-	} else if (!recording && play_record && gameover) { //Gameover
+	} else if (!recording && play_record && gameover) { //GAMEOVER
 		uint8_t i = memo_i_record;
 		on_off_all_LED(g_o_tab[i], g_o_tab[i + 1], g_o_tab[i + 2],
 				g_o_tab[i + 3], g_o_tab[i + 4], g_o_tab[i + 5], g_o_tab[i + 6],
@@ -83,7 +82,7 @@ void animation(bool recording, bool play_record, bool coll_detected,
 
 		playMelody(MARIO_DEATH, ML_SIMPLE_PLAY, NULL);
 
-	} else if (!recording && play_record && !gameover) { //if Victory
+	} else if (!recording && play_record && !gameover) { //WIN
 		uint32_t i = memo_i_win;
 		on_off_all_LED(win_tab[i], win_tab[i + 1], win_tab[i + 2],
 				win_tab[i + 3], win_tab[i + 4], win_tab[i + 5], win_tab[i + 6],

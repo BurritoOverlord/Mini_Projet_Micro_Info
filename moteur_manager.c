@@ -46,16 +46,15 @@ void moteur_manager_deplacement(uint8_t state_frequence)
 		}
 	}
 
+	//change speed
 	speed = toggle_speed(state_frequence, recording, play_record, speed);
 
 	/*****Contrainte Mouvement*****/
-	//mémorise avancer/reculer/stop
 	if (state_frequence == 0 || state_frequence == 3 || state_frequence == 4)
-		last_direction = state_frequence;
+		last_direction = state_frequence;	//mémorise avancer/reculer/stop
 
-	//continue la mouvement précédant(avancer/reculer/stop) après une rotation ou si changement de difficulté
 	if (state_frequence == 6 || state_frequence == 5)
-		state_frequence = last_direction;
+		state_frequence = last_direction;	//continue la mouvement précédant(avancer/reculer/stop) après une rotation ou si changement de vitesse
 	/*****Contrainte Mouvement*****/
 
 	/******Collision detection*****/

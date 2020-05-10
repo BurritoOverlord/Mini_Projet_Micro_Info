@@ -11,9 +11,6 @@
 #include <arm_math.h>
 #include <moteur_manager.h>
 
-//semaphore
-static BSEMAPHORE_DECL(sendToComputer_sem, TRUE);
-
 //2 times FFT_SIZE because these arrays contain complex numbers (real + imaginary)
 static float micLeft_cmplx_input[2 * FFT_SIZE];
 
@@ -122,7 +119,6 @@ void processAudioData(int16_t *data, uint16_t num_samples) {
 	 */
 
 	static uint16_t nb_samples = 0;
-	static uint8_t mustSend = 0;
 
 	//loop to fill the buffers
 	for (uint16_t i = 0; i < num_samples; i += 4) {
@@ -154,15 +150,7 @@ void processAudioData(int16_t *data, uint16_t num_samples) {
 		 */
 		arm_cmplx_mag_f32(micLeft_cmplx_input, micLeft_output, FFT_SIZE);
 
-		//sends only one FFT result over 10 for 1 mic to not flood the computer
-		//sends to UART3
-		if (mustSend > 8) {
-			//signals to send the result to the computer
-			chBSemSignal(&sendToComputer_sem);
-			mustSend = 0;
-		}
 		nb_samples = 0;
-		mustSend++;
 		sound_remote(micLeft_output);
 	}
 }
